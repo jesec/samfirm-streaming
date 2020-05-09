@@ -1,4 +1,6 @@
-﻿using System;
+﻿using ICSharpCode.SharpZipLib.Core;
+using ICSharpCode.SharpZipLib.Zip;
+using System;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
@@ -7,58 +9,76 @@ namespace SamFirm
 {
     internal static class Decrypt
     {
-        public static MainForm Form { get; set; }
         private static readonly byte[] IV = new byte[1];
         private static byte[] KEY;
 
-        public static int DecryptFile(string encryptedFile, string outputFile)
+        public static void UnzipFromStream(Stream zipStream, string outFolder)
         {
-            using (FileStream stream1 = new FileStream(encryptedFile, FileMode.Open))
+            using (var zipInputStream = new ZipInputStream(zipStream))
             {
-                using (FileStream stream2 = new FileStream(outputFile, FileMode.Create))
+                while (zipInputStream.GetNextEntry() is ZipEntry zipEntry)
                 {
-                    using (RijndaelManaged managed = new RijndaelManaged())
-                    {
-                        managed.Mode = CipherMode.ECB;
-                        managed.BlockSize = 0x80;
-                        managed.Padding = PaddingMode.PKCS7;
+                    var entryFileName = zipEntry.Name;
+                    // To remove the folder from the entry:
+                    //var entryFileName = Path.GetFileName(entryFileName);
+                    // Optionally match entrynames against a selection list here
+                    // to skip as desired.
+                    // The unpacked length is available in the zipEntry.Size property.
 
-                        using (ICryptoTransform transform = managed.CreateDecryptor(KEY, IV))
+                    // 4K is optimum
+                    var buffer = new byte[4096];
+
+                    // Manipulate the output filename here as desired.
+                    var fullZipToPath = Path.Combine(outFolder, entryFileName);
+                    var directoryName = Path.GetDirectoryName(fullZipToPath);
+                    if (directoryName.Length > 0)
+                        Directory.CreateDirectory(directoryName);
+
+                    // Skip directory entry
+                    if (Path.GetFileName(fullZipToPath).Length == 0)
+                    {
+                        continue;
+                    }
+
+                    Console.WriteLine(entryFileName);
+
+                    // Unzip file in buffered chunks. This is just as fast as unpacking
+                    // to a buffer the full size of the file, but does not waste memory.
+                    // The "using" will close the stream even if an exception occurs.
+                    using (FileStream streamWriter = File.Create(fullZipToPath))
+                    {
+                        StreamUtils.Copy(zipInputStream, streamWriter, buffer);
+                    }
+                }
+            }
+        }
+
+        public static int DecryptFile(Stream stream1, string outputDir)
+        {
+            using (RijndaelManaged managed = new RijndaelManaged())
+            {
+                managed.Mode = CipherMode.ECB;
+                managed.BlockSize = 0x80;
+                managed.Padding = PaddingMode.PKCS7;
+
+                using (ICryptoTransform transform = managed.CreateDecryptor(KEY, IV))
+                {
+                    try
+                    {
+                        using (CryptoStream stream3 = new CryptoStream(stream1, transform, CryptoStreamMode.Read))
                         {
-                            try
-                            {
-                                Utility.PreventDeepSleep(Utility.PDSMode.Start);
-                                using (CryptoStream stream3 = new CryptoStream(stream1, transform, CryptoStreamMode.Read))
-                                {
-                                    byte[] buffer = new byte[0x1000];
-                                    long num = 0L;
-                                    int count = 0;
-                                    do
-                                    {
-                                        Utility.PreventDeepSleep(Utility.PDSMode.Continue);
-                                        count = stream3.Read(buffer, 0, buffer.Length);
-                                        num += count;
-                                        stream2.Write(buffer, 0, count);
-                                        Form.SetProgressBar(Utility.GetProgress(num, stream1.Length));
-                                    }
-                                    while (count > 0);
-                                }
-                            }
-                            catch (CryptographicException)
-                            {
-                                Logger.WriteLine("Error DecryptFile(): Wrong key.");
-                                return 2;
-                            }
-                            catch (Exception e)
-                            {
-                                Logger.WriteLine("Error DecryptFile() -> " + e);
-                                return 1;
-                            }
-                            finally
-                            {
-                                Utility.PreventDeepSleep(Utility.PDSMode.Stop);
-                            }
+                            UnzipFromStream(stream3, outputDir);
                         }
+                    }
+                    catch (CryptographicException)
+                    {
+                        Logger.WriteLine("Error DecryptFile(): Wrong key.");
+                        return -1;
+                    }
+                    catch (Exception e)
+                    {
+                        Logger.WriteLine("Error DecryptFile() -> " + e);
+                        return -1;
                     }
                 }
             }

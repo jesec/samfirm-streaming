@@ -45,18 +45,18 @@ namespace SamFirm
         {
             string str;
             Firmware firmware = new Firmware();
-            Logger.WriteLine("Checking firmware for " + model + "/" + region + "/" + pda + "/" + csc + "/" + phone + "/" + data);
+            Console.WriteLine("Checking firmware for " + model + "/" + region + "/" + pda + "/" + csc + "/" + phone + "/" + data);
             int htmlstatus = Web.GenerateNonce();
             if (htmlstatus != 200)
             {
-                Logger.WriteLine("Error UpdateCheck(): Could not generate Nonce. Status code (" + htmlstatus + ")");
+                Console.WriteLine("Error UpdateCheck(): Could not generate Nonce. Status code (" + htmlstatus + ")");
                 firmware.ConnectionError = true;
                 return firmware;
             }
             htmlstatus = Web.DownloadBinaryInform(Xml.GetXmlBinaryInform(model, region, pda, csc, phone, data, BinaryNature), out str);
             if ((htmlstatus != 200) || (Utility.GetXmlStatusCode(str) != 200))
             {
-                Logger.WriteLine("Error UpdateCheck(): Could not send BinaryInform. Status code (" + htmlstatus + "/" + Utility.GetXmlStatusCode(str) + ")");
+                Console.WriteLine("Error UpdateCheck(): Could not send BinaryInform. Status code (" + htmlstatus + "/" + Utility.GetXmlStatusCode(str) + ")");
                 Utility.CheckHtmlXmlStatus(htmlstatus, Utility.GetXmlStatusCode(str));
                 return firmware;
             }
@@ -96,18 +96,18 @@ namespace SamFirm
                 }
             }
 
-            Logger.WriteLine("Model: " + firmware.Model);
-            Logger.WriteLine("Version: " + firmware.Version);
-            Logger.WriteLine("OS: " + firmware.OS);
-            Logger.WriteLine("Filename: " + firmware.Filename);
-            Logger.WriteLine("Size: " + firmware.Size + " bytes");
+            Console.WriteLine("Model: " + firmware.Model);
+            Console.WriteLine("Version: " + firmware.Version);
+            Console.WriteLine("OS: " + firmware.OS);
+            Console.WriteLine("Filename: " + firmware.Filename);
+            Console.WriteLine("Size: " + firmware.Size + " bytes");
             if ((firmware.BinaryNature == 1) && !string.IsNullOrEmpty(firmware.LogicValueFactory))
             {
-                Logger.WriteLine("LogicValue: " + firmware.LogicValueFactory);
+                Console.WriteLine("LogicValue: " + firmware.LogicValueFactory);
             }
             else if (!string.IsNullOrEmpty(firmware.LogicValueHome))
             {
-                Logger.WriteLine("LogicValue: " + firmware.LogicValueHome);
+                Console.WriteLine("LogicValue: " + firmware.LogicValueHome);
             }
             return firmware;
         }

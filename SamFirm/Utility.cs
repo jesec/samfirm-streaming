@@ -1,5 +1,4 @@
-﻿using Microsoft.WindowsAPICodePack.Taskbar;
-using System;
+﻿using System;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
@@ -159,8 +158,7 @@ namespace SamFirm
 
         public static int GetProgress(long value, long total)
         {
-            float num = ((float) value) / total * 100f;
-            return (int) num;
+            return 0;
         }
 
         public static int GetXmlStatusCode(string xml)
@@ -235,20 +233,7 @@ namespace SamFirm
 
         public static void Reconnect(Action<object, EventArgs> action)
         {
-            BackgroundWorker worker = new BackgroundWorker();
-            worker.DoWork += delegate
-            {
-                Thread.Sleep(1000);
-                if (CheckConnection("cloud-neofussvr.sslcs.cdngc.net"))
-                {
-                    MainForm.DownloadEventArgs args = new MainForm.DownloadEventArgs
-                    {
-                        isReconnect = true
-                    };
-                    action(null, args);
-                }
-            };
-            worker.RunWorkerAsync();
+
         }
 
         public static void ResetSpeed(long _lastBread)
@@ -270,14 +255,7 @@ namespace SamFirm
 
         public static void TaskBarProgressPaused(bool paused)
         {
-            if (paused)
-            {
-                TaskbarManager.Instance.SetProgressState(TaskbarProgressBarState.Paused);
-            }
-            else
-            {
-                TaskbarManager.Instance.SetProgressState(TaskbarProgressBarState.Normal);
-            }
+
         }
 
         public enum PDSMode

@@ -3,30 +3,32 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Reflection;
 using System.Windows.Forms;
+using System.IO;
 
 namespace SamFirm
 {
     internal static class Program
     {
         [STAThread]
-        public static void Main()
+        public static int Main(string[] args)
         {
-            Application.EnableVisualStyles();
-            Application.SetCompatibleTextRenderingDefault(false);
-            Imports.FreeConsole();
-
-            //Set localization for testing.
-#if DEBUG
-            CultureInfo.CurrentUICulture = new CultureInfo("de");
-#endif
-
-            //제목 표시줄에 버전정보를 출력한다.
-            MainForm mainForm = new MainForm();
-            FileVersionInfo versionInfo = FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location);
-            mainForm.Text = "SamFirm Continued (v" + versionInfo.FileVersion + ")";
-
-            //프로그램 실행
-            Application.Run(mainForm);
+            if (args.Length != 2)
+            {
+                Console.WriteLine("This program needs two arguments: MODEL and CSC");
+                return -1;
+            }
+            Command.Firmware FW = Command.UpdateCheckAuto(args[0], args[1], true);
+            string filename = string.Join("_", new string[] { FW.Model, FW.Region });
+            Console.WriteLine("\nOutput: " + Path.GetFullPath(filename));
+            if (FW.BinaryNature == 1)
+            {
+                Decrypt.SetDecryptKey(FW.Version, FW.LogicValueFactory);
+            }
+            else
+            {
+                Decrypt.SetDecryptKey(FW.Version, FW.LogicValueHome);
+            }
+            return Command.Download(FW.Path, FW.Filename, FW.Version, FW.Region, FW.Model_Type, filename, FW.Size);
         }
     }
 }
