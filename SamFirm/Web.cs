@@ -10,7 +10,7 @@ namespace SamFirm
 {
     internal static class Web
     {
-        public static string JSessionID { get; set; } = string.Empty;
+        public static CookieContainer Cookies = new CookieContainer();
         public static string Nonce { get; set; } = string.Empty;
 
         public static int DownloadBinary(string path, string file, string saveTo, string size)
@@ -86,6 +86,7 @@ namespace SamFirm
         {
             xmlresponse = null;
             HttpWebRequest wr = KiesRequest.Create(URL);
+            wr.CookieContainer = Cookies;
             wr.Method = "POST";
             wr.Headers["Authorization"] = "FUS nonce=\"\", signature=\"" + Imports.GetAuthorization(Nonce) + "\", nc=\"\", type=\"\", realm=\"\"";
             byte[] bytes = Encoding.ASCII.GetBytes(Regex.Replace(xml, @"\r\n?|\n|\t", string.Empty));
@@ -120,10 +121,6 @@ namespace SamFirm
             try
             {
                 WebResponse response = wr.GetResponse();
-                if (response.Headers.AllKeys.Contains("Set-Cookie"))
-                {
-                    JSessionID = response.Headers["Set-Cookie"].Replace("JSESSIONID=", "").Split(new[] { ';' })[0];
-                }
                 if (response.Headers.AllKeys.Contains("NONCE"))
                 {
                     Nonce = response.Headers["NONCE"];

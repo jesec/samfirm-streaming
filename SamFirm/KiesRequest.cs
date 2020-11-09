@@ -11,10 +11,7 @@ namespace SamFirm
             request.Headers["Cache-Control"] = "no-cache";
             request.UserAgent = "Kies2.0_FUS";
             request.Headers.Add("Authorization", "FUS nonce=\"\", signature=\"\", nc=\"\", type=\"\", realm=\"\"");
-            CookieContainer container = new CookieContainer(1);
-            Cookie cookie = new Cookie("JSESSIONID", Web.JSessionID);
-            container.Add(new Uri(requestUriString), cookie);
-            request.CookieContainer = container;
+            request.CookieContainer = Web.Cookies;
             return request;
         }
     }
